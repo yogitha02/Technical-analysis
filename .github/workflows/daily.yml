@@ -1,9 +1,9 @@
-name: Daily TA Charts
+name: Weekly TA Charts
 
 on:
   schedule:
-    - cron: "0 11 * * 1-5"   # 4:30 PM IST, Mon-Fri
-  workflow_dispatch:           # manual trigger
+    - cron: "0 11 * * 1"   # Every Monday 4:30 PM IST
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -29,21 +29,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run TA engine
+      - name: Run TA engine + Gemini analysis
         run: python run.py
-
-      - name: Build index page
-        run: |
-          echo "<html><head><title>Auto TA Charts</title>" > charts/index.html
-          echo "<style>body{background:#0D1117;color:#C9D1D9;font-family:monospace;padding:20px;}</style></head><body>" >> charts/index.html
-          echo "<h2>Auto TA Charts — $(date '+%Y-%m-%d')</h2><ul>" >> charts/index.html
-          for f in charts/*.html; do
-            name=$(basename $f)
-            if [ "$name" != "index.html" ]; then
-              echo "<li><a href='$name' style='color:#58A6FF;'>$name</a></li>" >> charts/index.html
-            fi
-          done
-          echo "</ul></body></html>" >> charts/index.html
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
