@@ -1,0 +1,55 @@
+name: Daily TA Charts
+
+on:
+  schedule:
+    - cron: "0 11 * * 1-5"   # 4:30 PM IST, Mon-Fri
+  workflow_dispatch:           # manual trigger
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  generate-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run TA engine
+        run: python run.py
+
+      - name: Build index page
+        run: |
+          echo "<html><head><title>Auto TA Charts</title>" > charts/index.html
+          echo "<style>body{background:#0D1117;color:#C9D1D9;font-family:monospace;padding:20px;}</style></head><body>" >> charts/index.html
+          echo "<h2>Auto TA Charts — $(date '+%Y-%m-%d')</h2><ul>" >> charts/index.html
+          for f in charts/*.html; do
+            name=$(basename $f)
+            if [ "$name" != "index.html" ]; then
+              echo "<li><a href='$name' style='color:#58A6FF;'>$name</a></li>" >> charts/index.html
+            fi
+          done
+          echo "</ul></body></html>" >> charts/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: charts/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
