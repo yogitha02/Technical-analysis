@@ -1,44 +1,39 @@
 name: Weekly TA Charts
-
 on:
   schedule:
-    - cron: "0 11 * * 1"   # Every Monday 4:30 PM IST
+    - cron: "0 11 * * 1"
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 jobs:
   generate-and-deploy:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Install dependencies
         run: pip install -r requirements.txt
-
+      - name: Install system dependencies for kaleido
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb
       - name: Run TA engine + Gemini analysis
-        run: python run.py
+        run: xvfb-run python run.py
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: charts/
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
