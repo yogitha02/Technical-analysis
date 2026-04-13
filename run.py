@@ -192,7 +192,7 @@ def main():
             except Exception:
                 pass
 
-            time.sleep(1)  # avoid rate limit
+            time.sleep(5)  # avoid rate limit
 
         summaries[symbol] = symbol_summary
         print()
